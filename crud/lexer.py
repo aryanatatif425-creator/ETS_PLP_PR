@@ -107,18 +107,37 @@ class Lexer:
                 self._advance()
             return
         if ch == "/" and self._peek() == "*":
+
             # TODO(T3): dukung komentar blok /* ... */ (SPESIFIKASI.md bagian 2.3).
-            raise LexError("komentar blok belum didukung", line, col)
+            # Hasil Pengerjaan TODO(T3)
+            self._advance() # Melewati karakter '*' setelah '/'
+            while not self._at_end():  
+                if self._peek() == "*" and self._peek(1) == "/":
+                    self._advance()  # Melewati karakter '*'
+                    self._advance()  # Melewati karakter '/'
+                    return
+                else:
+                    self._advance() # Melewati karakter lain dalam komentar blok
+            raise LexError("komentar blok tidak ditutup", line, col)
+        
         if ch in _SINGLE:
             self._add(_SINGLE[ch], ch, line, col)
             return
         if ch in "+-/=":
             self._add(TokenType.OP, ch, line, col)
             return
+
+        # Perbaikan BUG(L2): Operator perbandingan harus diikuti '=' atau '>' untuk '<', dan '=' untuk '>'
         if ch == "<":
-            op = "<=" if self._match("=") else "<"
+            if self._match("="):
+                op = "<="
+            elif self._match(">"):
+                op = "<>"
+            else:
+                op = "<"
             self._add(TokenType.OP, op, line, col)
             return
+        
         if ch == ">":
             op = ">=" if self._match("=") else ">"
             self._add(TokenType.OP, op, line, col)
@@ -150,16 +169,23 @@ class Lexer:
             return
         raise LexError(f"karakter tidak dikenal {ch!r}", line, col)
 
-    def _string(self, line: int, col: int) -> None:
-        chars: list[str] = []
-        while True:
-            if self._at_end():
-                raise LexError("string tidak ditutup", line, col)
-            ch = self._advance()
-            if ch == "'":
-                break
-            chars.append(ch)
-        self._add(TokenType.STRING, "".join(chars), line, col)
+    # Perbaikan BUG(L3): String harus ditutup dengan tanda kutip tunggal
+        def _string(self, line: int, col: int) -> None:
+            chars: list[str] = []
+            while True:
+                if self._at_end():
+                    raise LexError("string tidak ditutup", line, col)
+                ch = self._advance()
+                if ch == "'":
+                    # Jika kutip diikuti kutip lagi (''), masukkan satu kutip ke teks
+                    if self._match("'"):
+                        chars.append("'")
+                    else:
+                        # Jika kutip tunggal, berarti penutup string
+                        break
+                else:
+                    chars.append(ch)
+            self._add(TokenType.STRING, "".join(chars), line, col)
 
     def _number(self, line: int, col: int) -> None:
         start = self.pos - 1
@@ -175,11 +201,14 @@ class Lexer:
         start = self.pos - 1
         while self._peek().isalnum() or self._peek() == "_":
             self._advance()
+
+        # Perbaikan BUG(L1): Keyword Huruf Kecil Dianggap Identifier
         text = self.src[start:self.pos]
-        if text in KEYWORDS:
-            self._add(TokenType.KEYWORD, text, line, col)
+        upper = text.upper() # Jadikan huruf besar dulu
+        if upper in KEYWORDS:
+            self._add(TokenType.KEYWORD, upper, line, col) # Simpan sebagai KEYWORD dengan nilai huruf besar
         else:
-            self._add(TokenType.IDENT, text, line, col)
+            self._add(TokenType.IDENT, text, line, col)     # Tetap IDENT jika bukan kata kunci
 
 
 def tokenize(source: str) -> list[Token]:
