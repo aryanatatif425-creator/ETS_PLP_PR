@@ -169,6 +169,7 @@ class Parser:
             return self._advance().value.lower()
         return None
 
+    # Perbaikan BUG(P2): Parsing LEFT OUTER JOIN Menolak Keyword Opsional OUTER
     def _join(self) -> ast.Join:
         tok = self._peek()
         kind = "INNER"
@@ -176,6 +177,7 @@ class Parser:
             kind = "INNER"
         elif self._match_kw("LEFT"):
             kind = "LEFT"
+            self._match_kw("OUTER")  # Lewati keyword opsional 'OUTER' jika ada
         self._expect_kw("JOIN")
         source = self._table_ref()
         self._expect_kw("ON")
@@ -245,15 +247,22 @@ class Parser:
         return ast.Delete(table, where, line=start.line)
 
     # ---- ekspresi (dari presedensi terendah ke tertinggi) ---------------
+    # Perbaikan BUG(P1): ekspresi harus di-parse dengan memperhatikan presedensi operator.
     def _expr(self):
-        return self._logical()
+        return self._or()
 
-    def _logical(self):
-        # OR dan AND: operator logika biner, asosiatif kiri.
+    def _or(self):
+        # OR memiliki presedensi paling rendah (tingkat 1)
+        left = self._and()
+        while self._match_kw("OR"):
+            left = ast.BinaryOp(left, "OR", self._and())
+        return left
+
+    def _and(self):
+        # AND memiliki presedensi lebih tinggi daripada OR (tingkat 2)
         left = self._not()
-        while self._check_kw("AND", "OR"):
-            op = self._advance().value
-            left = ast.BinaryOp(left, op, self._not())
+        while self._match_kw("AND"):
+            left = ast.BinaryOp(left, "AND", self._not())
         return left
 
     def _not(self):
