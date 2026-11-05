@@ -18,6 +18,7 @@ sendiri dan memakai konsep dari *Crafting Interpreters* (sebutkan bab). Bagian i
 **Ditemukan oleh:** Arya · **Diperbaiki oleh:** Arya
 
 **Gejala.** Pada berkas SQL multi-statement, alias tabel yang dideklarasikan pada statement `DELETE` (misal `s` pada `DELETE FROM sesi s`) bocor dan tetap dapat diakses oleh statement berikutnya. Contohnya pada `SELECT s.id FROM pengguna u`, rujukan `s.id` salah di-resolve ke tabel `sesi` dari statement `DELETE` sebelumnya tanpa menghasilkan error. Menurut SPESIFIKASI.md Bagian 4.5: *"Setiap statement berdiri sendiri: Setelah satu statement selesai di-resolve, tidak boleh ada scope tersisa. Alias dari statement sebelumnya tidak boleh terlihat oleh statement berikutnya."* dan Bagian 4.3 mewajibkan pelaporan error `alias 's' tidak terdefinisi`.
+```sql
 select id from t;
 ```
 
@@ -36,6 +37,7 @@ Pada `crud/lexer.py` di fungsi `_word()`, teks yang dipindai dikonversi ke huruf
 **Ditemukan oleh:** Arya · **Diperbaiki oleh:** Arya
 
 **Gejala.** Pada statement `UPDATE` yang mengandung subquery di klausa `SET` maupun `WHERE`, tabel sumber di dalam subquery salah ditandai melakukan operasi `U` (Update) alih-alih `R` (Read). Contohnya pada `UPDATE pesanan SET status = 'BATAL' WHERE pelanggan_id IN (SELECT id FROM pelanggan WHERE diblokir = 1)`, tabel `pelanggan` menghasilkan set operasi `{'U'}`, padahal menurut SPESIFIKASI.md Bagian 5: *"UPDATE: Tabel target: U, Tabel lain (subquery di SET maupun WHERE): R. Membaca tabel lewat subquery selalu R, apa pun jenis statement luarnya."*
+```sql
 SELECT 1 FROM t WHERE a <> 1;
 ```
 
@@ -124,6 +126,7 @@ UPDATE pesanan SET status = 'BATAL' WHERE pelanggan_id IN (SELECT id FROM pelang
 **Test regresi.** `test_regresi_a1_subquery_update_selalu_read` di `tests/test_tambahan.py`.
 
 **Peran AI.** AI membantu meninjau kesesuaian antara tabel aturan CRUD di `SPESIFIKASI.md` Bagian 5 dengan penelusuran AST di `crud/analyzer.py`. Kami memverifikasinya dengan menyusun test regresi yang membuktikan assertion failure (`assert {'U'} == {'R'}`) sebelum perbaikan dan lolos sesudahnya.
+```sql
 SELECT 'O''Brien' FROM t;
 ```
 
