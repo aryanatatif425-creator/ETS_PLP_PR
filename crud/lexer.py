@@ -186,11 +186,14 @@ class Lexer:
         start = self.pos - 1
         while self._peek().isalnum() or self._peek() == "_":
             self._advance()
+
+        # Perbaikan BUG(L1): Keyword Huruf Kecil Dianggap Identifier
         text = self.src[start:self.pos]
-        if text in KEYWORDS:
-            self._add(TokenType.KEYWORD, text, line, col)
+        upper = text.upper() # Jadikan huruf besar dulu
+        if upper in KEYWORDS:
+            self._add(TokenType.KEYWORD, upper, line, col) # Simpan sebagai KEYWORD dengan nilai huruf besar
         else:
-            self._add(TokenType.IDENT, text, line, col)
+            self._add(TokenType.IDENT, text, line, col)     # Tetap IDENT jika bukan kata kunci
 
 
 def tokenize(source: str) -> list[Token]:
