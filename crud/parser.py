@@ -87,11 +87,14 @@ class Parser:
                 self._synchronize()
         return ast.Script(statements, errors)
 
+    # Perbaikan BUG(P3): Panic Mode Recovery Membuang Sisa File Sampai EOF
     def _synchronize(self) -> None:
         # Panic mode (Crafting Interpreters bab 6): buang token sampai
         # titik aman, lalu lanjutkan parsing.
+        # Panic mode: buang token sampai dan termasuk ';' berikutnya
         while not self._at_end():
-            self._advance()
+            if self._advance().type == T.SEMICOLON:
+                return
 
     def _statement(self):
         if self._check_kw("SELECT"):
