@@ -85,15 +85,12 @@ class Resolver:
             self._declare(source.alias, None, source.line)
 
     def _lookup(self, name: str) -> ScopeEntry | None:
-        """Cari nama di rantai scope."""
-        chain = []
+        """Cari nama di rantai scope (mulai dari scope terdalam ke luar)."""
         scope = self.scope
         while scope is not None:
-            chain.append(scope)
-            scope = scope.parent
-        for scope in reversed(chain):
             if name in scope.entries:
                 return scope.entries[name]
+            scope = scope.parent
         return None
 
     # ---- statement ------------------------------------------------------
@@ -139,6 +136,7 @@ class Resolver:
         self._push()
         self._declare_source(dele.table)
         self._expr(dele.where)
+        self._pop()
 
     # ---- ekspresi -------------------------------------------------------
     def _expr(self, expr) -> None:
@@ -177,8 +175,13 @@ class Resolver:
             else:
                 col.resolved = _target_of(entry)
             return
-        # TODO(T2): kolom tanpa qualifier (SPESIFIKASI.md bagian 4.3).
-        #   - tepat satu tabel di scope terdalam -> isi col.resolved
-        #   - lebih dari satu tabel              -> warning "ambigu tanpa skema"
-        #   - tidak ada tabel                    -> warning
-        pass
+
+        if self.scope is None or not self.scope.entries:
+            self._warning(f"kolom '{col.name}' tidak ada tabel di scope", col.line)
+            return
+
+        entries = list(self.scope.entries.values())
+        if len(entries) == 1:
+            col.resolved = _target_of(entries[0])
+        else:
+            self._warning(f"kolom '{col.name}' ambigu tanpa skema", col.line)
