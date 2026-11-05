@@ -126,10 +126,18 @@ class Lexer:
         if ch in "+-/=":
             self._add(TokenType.OP, ch, line, col)
             return
+
+        # Perbaikan BUG(L2): Operator perbandingan harus diikuti '=' atau '>' untuk '<', dan '=' untuk '>'
         if ch == "<":
-            op = "<=" if self._match("=") else "<"
+            if self._match("="):
+                op = "<="
+            elif self._match(">"):
+                op = "<>"
+            else:
+                op = "<"
             self._add(TokenType.OP, op, line, col)
             return
+        
         if ch == ">":
             op = ">=" if self._match("=") else ">"
             self._add(TokenType.OP, op, line, col)
