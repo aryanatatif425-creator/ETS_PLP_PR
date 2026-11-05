@@ -11,6 +11,20 @@ sendiri dan memakai konsep dari *Crafting Interpreters* (sebutkan bab). Bagian i
 
 **Gejala.** Pada query dengan subquery di mana alias di query luar sama dengan alias di dalam subquery (misal `x`), kolom yang dirujuk di dalam subquery (`x.pelanggan_id`) salah dihubungkan ke tabel di query luar (`pelanggan`), bukan tabel lokal subquery (`pesanan`). Menurut SPESIFIKASI.md Bagian 4.3: *"qualifier dicari mulai dari scope terdalam ke luar. Yang pertama ditemukan dipakai. Akibatnya alias di subquery menutupi alias yang sama di luar (shadowing)"*.
 
+**Reproduksi minimal.** SQL terpendek yang memicu bug:
+
+```sql
+SELECT x.id FROM pelanggan x WHERE x.id IN (SELECT x.pelanggan_id FROM pesanan x);
+```
+
+**Akar masalah.** *Crafting Interpreters* Bab 11 (Resolving and Binding) menjelaskan konsep *lexical scoping* dan *environment chaining*. Resolusi variabel/identifier harus dimulai dari lingkup lokal terdalam (*innermost scope*) lalu bergerak keluar (*parent/enclosing scope*). Kode lama di `crud/resolver.py` mengumpulkan scope dari terdalam ke terluar di list `chain`, namun mengiterasinya dengan `for scope in reversed(chain):`. Pemanggilan `reversed()` ini membalik urutan pencarian menjadi dari terluar ke terdalam, sehingga alias pada query luar mendahului dan menimpa alias di dalam subquery.
+
+**Perbaikan.** Pada file `crud/resolver.py`, fungsi `_lookup()` diubah untuk menelusuri rantai scope langsung dari `self.scope` ke `scope.parent` menggunakan loop `while scope is not None:`. Pendekatan alternatif adalah tetap menggunakan list `chain` tanpa memanggil `reversed()`, namun penelusuran rantai pointer `parent` langsung lebih bersih, tidak mengalokasikan list sementara, dan secara langsung mencerminkan struktur *environment walk* di Bab 11.
+
+**Test regresi.** `test_regresi_r1_shadowing_alias_subquery` di `tests/test_tambahan.py`.
+
+**Peran AI.** AI membantu mengidentifikasi anomali resolusi alias `x` saat visualisasi AST pada `data/sample/audit.sql`. Kami memverifikasinya secara independen dengan menulis test regresi di `tests/test_tambahan.py` yang memicu assertion error (`'pelanggan' == 'pesanan'`) pada kode lama dan lulus setelah perbaikan.
+
 ---
 
 ## Bug 2: Kebocoran Scope pada Statement DELETE Akibat Ketiadaan `_pop()`
