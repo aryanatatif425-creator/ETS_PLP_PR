@@ -12,8 +12,8 @@ alternatif yang ditolak dan alasannya. Contoh topik (boleh memilih yang lain):
 
 | No | Keputusan | Alternatif yang ditolak | Alasan |
 | --- | --- | --- | --- |
-| 1 | | | |
-| 2 | | | |
-| 3 | | | |
-| 4 | | | |
-| 5 | | | |
+| 1 | Parser membedakan `*` dari **konteks gramatikal**: `*` di awal `select_list` jadi `Star()` (semua kolom); `*` di tengah ekspresi jadi perkalian oleh `_multiplicative` | Token berbeda untuk dua fungsi `*`, atau lookahead jauh ke depan | `_select_list()` dan `_multiplicative()` sudah punya konteks sendiri; `*` di awal select_list tidak mungkin perkalian, `*` dalam ekspresi tidak mungkin "semua kolom". Grammar (SPESIFIKASI 3.2) tidak memaku lookahead; konteks gramatikal sudah cukup, jadi tidak perlu token/state tambahan. |
+| 2 | Presedensi `AND`/`OR` dinyatakan **di level grammar**: `_expr` → `_or` → `_and` → `_not`, kiri asosiatif | `_logical` datar yang mem-parsing `AND` dan `OR` pada level sama (bug P1 riil) | SPESIFIKASI 3.1: `AND` lebih tinggi dari `OR`. `a = 1 OR b = 2 AND c = 3` berarti `a = 1 OR (b = 2 AND c = 3)`. Versi datar menghasilkan `(a = 1 OR b = 2) AND c = 3` — makna tertukar. Perbaikan mengubahnya sesuai spesifikasi. |
+| 3 | Panic mode recovery berhenti di **`;` berikutnya (inklusif)**, lalu parsing statement setelahnya | Berhenti di keyword statement (`SELECT`, `INSERT`, …) atau di EOF (bug P3 riil — membuang statement valid setelahnya) | Grammar mengakhiri statement dengan `;` atau EOF; `;` adalah penanda akhir yang tidak ambigu. `campuran_error.sql` membuktikan: baris 4 rusak → 1 error, baris 6 (`UPDATE`) dan 8 (`DELETE`) tetap diparsing dan masuk matrix. SPESIFIKASI 6. |
+| 4 | Pencarian qualifier kolom (`p.nama`) dimulai dari **scope terdalam ke luar** (`self.scope` → `parent`); ketemu pertama dipakai | Iterasi `reversed(chain)` (bug R1 riil — `x` di subquery ter-resolve ke tabel luar), atau flatten semua scope jadi satu himpunan | SQL lexical scoping: alias di subquery menutupi alias luar (shadowing), sekaligus subquery tetap bisa merujuk alias luar (correlated subquery — `audit.sql` baris 12-14). Urutan terbalik mematahkan keduanya. SPESIFIKASI 4.3/4.4. |
+| 5 | Kolom tanpa qualifier **hanya dilihat di scope terdalam**: tepat satu tabel → di-resolve, lebih dari satu → warning "ambigu tanpa skema" & `resolved` kosong, tidak ada → warning | Unqualified ikut rantai scope seperti qualified, atau selalu error keras | SPESIFIKASI 4.3 membatasi ke terdalam agar kode terikat ke tabel luar tanpa qualifier. Konsekuensinya kolom milik scope luar wajib ditulis `p.nama` — kelemahan disadari dan diterima karena sesuai spesifikasi. |
