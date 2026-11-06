@@ -170,22 +170,22 @@ class Lexer:
         raise LexError(f"karakter tidak dikenal {ch!r}", line, col)
 
     # Perbaikan BUG(L3): String harus ditutup dengan tanda kutip tunggal
-        def _string(self, line: int, col: int) -> None:
-            chars: list[str] = []
-            while True:
-                if self._at_end():
-                    raise LexError("string tidak ditutup", line, col)
-                ch = self._advance()
-                if ch == "'":
-                    # Jika kutip diikuti kutip lagi (''), masukkan satu kutip ke teks
-                    if self._match("'"):
-                        chars.append("'")
-                    else:
-                        # Jika kutip tunggal, berarti penutup string
-                        break
+    def _string(self, line: int, col: int) -> None:
+        chars: list[str] = []
+        while True:
+            if self._at_end():
+                raise LexError("string tidak ditutup", line, col)
+            ch = self._advance()
+            if ch == "'":
+                # Jika kutip diikuti kutip lagi (''), masukkan satu kutip ke teks
+                if self._match("'"):
+                    chars.append("'")
                 else:
-                    chars.append(ch)
-            self._add(TokenType.STRING, "".join(chars), line, col)
+                    # Jika kutip tunggal, berarti penutup string
+                    break
+            else:
+                chars.append(ch)
+        self._add(TokenType.STRING, "".join(chars), line, col)
 
     def _number(self, line: int, col: int) -> None:
         start = self.pos - 1
