@@ -1,9 +1,5 @@
 # Log Penggunaan AI
 
-Catat setiap penggunaan AI atau coding agent yang memengaruhi kode atau laporan.
-Setiap baris di bawah ini merepresentasikan satu sesi interaksi dengan coding agent,
-dengan fokus pada isi tugas inti dan keputusan yang diambil.
-
 | No | Pengguna | Prompt / tugas (ringkas) | Hasil: diterima, diubah, atau ditolak | Alasan | Cara verifikasi |
 |---|---|---|---|---|---|
 | 1 | Arya | Mapping awal: analisis sebaran kegagalan test bawaan dan identifikasi komponen AST yang bertanggung jawab atas TODO 1-2 serta bug di resolver & analyzer | Diubah | AI menyarankan langsung mengubah fungsi resolver, namun saya tolak dan membatasi sesi hanya untuk memetakan alur kontrol (`parser.py` -> `resolver.py` -> `analyzer.py`) agar pembagian tugas dengan rekan jelas. | Memeriksa kecocokan traceback `pytest` dengan spesifikasi arsitektur di SPESIFIKASI.md §1 & §4. |

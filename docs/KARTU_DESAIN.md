@@ -1,15 +1,5 @@
 # Kartu Desain
 
-Tuliskan lima keputusan desain penting dalam pekerjaan kalian. Untuk tiap keputusan, sebutkan
-alternatif yang ditolak dan alasannya. Contoh topik (boleh memilih yang lain):
-
-- bagaimana parser membedakan `*` sebagai "semua kolom" dan sebagai perkalian;
-- di mana dan bagaimana presedensi `AND`/`OR` dinyatakan;
-- mengapa error recovery berhenti di `;`, bukan di keyword `SELECT` berikutnya;
-- urutan pencarian scope dan akibatnya pada shadowing serta correlated subquery;
-- mengapa kolom tanpa qualifier hanya dilihat di scope terdalam, dan apa kelemahannya;
-- bagaimana implementasi `INSERT ... SELECT` atau komentar blok kalian.
-
 | No | Keputusan | Alternatif yang ditolak | Alasan |
 | --- | --- | --- | --- |
 | 1 | Parser membedakan `*` dari **konteks gramatikal**: `*` di awal `select_list` jadi `Star()` (semua kolom); `*` di tengah ekspresi jadi perkalian oleh `_multiplicative` | Token berbeda untuk dua fungsi `*`, atau lookahead jauh ke depan | `_select_list()` dan `_multiplicative()` sudah punya konteks sendiri; `*` di awal select_list tidak mungkin perkalian, `*` dalam ekspresi tidak mungkin "semua kolom". Grammar (SPESIFIKASI 3.2) tidak memaku lookahead; konteks gramatikal sudah cukup, jadi tidak perlu token/state tambahan. |
