@@ -108,8 +108,7 @@ class Lexer:
             return
         if ch == "/" and self._peek() == "*":
 
-            # TODO(T3): dukung komentar blok /* ... */ (SPESIFIKASI.md bagian 2.3).
-            # Hasil Pengerjaan TODO(T3)
+            # Dukung komentar blok /* ... */ (SPESIFIKASI.md bagian 2.3).
             self._advance() # Melewati karakter '*' setelah '/'
             while not self._at_end():  
                 if self._peek() == "*" and self._peek(1) == "/":
